@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Backup function
+// Main Backup Function
 function abr_create_backup() {
     $backup_dir = ABR_BACKUP_DIR;
 
@@ -18,39 +18,61 @@ function abr_create_backup() {
         return json_encode(['status' => 'error', 'message' => 'Backup directory is not writable']);
     }
 
-    // Define a single ZIP file for this backup
-    $backup_file = $backup_dir . 'backup-' . date('Y-m-d-H-i-s') . '.zip';
+    // Generate filenames with timestamp
+    $timestamp = date('Y-m-d-H-i-s');
+    $backup_plugins = "{$backup_dir}backup-plugins-{$timestamp}.zip";
+    $backup_themes = "{$backup_dir}backup-themes-{$timestamp}.zip";
+    $backup_uploads = "{$backup_dir}backup-uploads-{$timestamp}.zip";
+    $backup_db = "{$backup_dir}backup-db-{$timestamp}.zip";
 
-    // Prevent duplicate backups by checking if the file already exists
-    if (file_exists($backup_file)) {
-        return json_encode(['status' => 'error', 'message' => 'A backup is already in progress']);
-    }
+    // Create Backup for Plugins
+    create_zip_backup(WP_PLUGIN_DIR, $backup_plugins, 'plugins/');
 
-    $zip = new ZipArchive();
-    if ($zip->open($backup_file, ZipArchive::CREATE) !== true) {
-        error_log("Error: Could not create ZIP file {$backup_file}");
-        return json_encode(['status' => 'error', 'message' => 'Failed to create ZIP archive']);
-    }
+    // Create Backup for Themes
+    create_zip_backup(get_theme_root(), $backup_themes, 'themes/');
 
-    // Add wp-content folder to ZIP
-    $wp_content_path = ABSPATH . 'wp-content/';
-    add_folder_to_zip($wp_content_path, $zip, 'wp-content/');
+    // Create Backup for Uploads
+    create_zip_backup(WP_CONTENT_DIR . '/uploads/', $backup_uploads, 'uploads/');
 
-    // Export database and add to ZIP
+    // Create Database Backup ZIP
     $db_backup_content = abr_export_database();
     if ($db_backup_content !== false) {
-        $zip->addFromString('database.sql', $db_backup_content);
+        $zip_db = new ZipArchive();
+        if ($zip_db->open($backup_db, ZipArchive::CREATE) !== true) {
+            error_log("Error: Could not create ZIP file {$backup_db}");
+            return json_encode(['status' => 'error', 'message' => 'Failed to create database ZIP archive']);
+        }
+        $zip_db->addFromString('database.sql', $db_backup_content);
+        $zip_db->setCompressionIndex(0, ZipArchive::CM_DEFLATE);
+        $zip_db->close();
     } else {
         error_log("Warning: Database export failed.");
     }
 
-    // Close ZIP file
-    $zip->close();
-
-    return json_encode(['status' => 'success', 'message' => 'Backup completed successfully', 'backup_file' => $backup_file]);
+    return json_encode([
+        'status' => 'success',
+        'message' => 'Backup completed successfully',
+        'backup_plugins' => $backup_plugins,
+        'backup_themes' => $backup_themes,
+        'backup_uploads' => $backup_uploads,
+        'backup_db' => $backup_db
+    ]);
 }
 
-// Function to recursively add files to ZIP
+// Function to create ZIP backups for files
+function create_zip_backup($source, $zip_file, $folder_name) {
+    $zip = new ZipArchive();
+    if ($zip->open($zip_file, ZipArchive::CREATE) !== true) {
+        error_log("Error: Could not create ZIP file {$zip_file}");
+        return false;
+    }
+    add_folder_to_zip($source, $zip, $folder_name);
+    $zip->setCompressionIndex(0, ZipArchive::CM_DEFLATE);
+    $zip->close();
+    return true;
+}
+
+// Recursively add files to ZIP
 function add_folder_to_zip($folder, $zip, $parent_folder) {
     $files = scandir($folder);
     foreach ($files as $file) {
@@ -65,7 +87,7 @@ function add_folder_to_zip($folder, $zip, $parent_folder) {
     }
 }
 
-// Dynamic WordPress Database Export without mysqldump
+// Export database using wpdb (No CLI needed)
 function abr_export_database() {
     global $wpdb;
     $tables = $wpdb->get_col("SHOW TABLES");
@@ -78,12 +100,10 @@ function abr_export_database() {
     $sql_dump = "-- WordPress Database Backup\n-- Generated on " . date('Y-m-d H:i:s') . "\n\n";
 
     foreach ($tables as $table) {
-        // Get table structure
         $create_table = $wpdb->get_row("SHOW CREATE TABLE `$table`", ARRAY_N);
         if (!$create_table) continue;
         $sql_dump .= "\n\n" . $create_table[1] . ";\n\n";
 
-        // Get table data
         $rows = $wpdb->get_results("SELECT * FROM `$table`", ARRAY_A);
         foreach ($rows as $row) {
             $values = array_map(fn($value) => "'" . esc_sql($value) . "'", $row);
@@ -94,33 +114,11 @@ function abr_export_database() {
     return $sql_dump;
 }
 
-// AJAX Handler for Backup Process
-add_action('wp_ajax_abr_ajax_backup', 'abr_ajax_backup');
-
-function abr_ajax_backup() {
-    // Ensure only one backup is created per request
-    check_ajax_referer('abr_ajax_backup_nonce', 'security');
-
-    // Prevent multiple backups by adding a transient lock
-    if (get_transient('abr_backup_in_progress')) {
-        echo json_encode(['status' => 'error', 'message' => 'A backup is already running']);
-        wp_die();
+// WordPress Cron Job for Scheduled Backups
+function abr_schedule_backup($interval) {
+    if (!wp_next_scheduled('abr_scheduled_backup')) {
+        wp_schedule_event(time(), $interval, 'abr_scheduled_backup');
     }
-
-    set_transient('abr_backup_in_progress', true, 300); // Lock for 5 minutes
-    $response = abr_create_backup();
-    delete_transient('abr_backup_in_progress'); // Remove lock after completion
-
-    echo $response;
-    wp_die();
 }
 
-// Enqueue necessary scripts for AJAX
-add_action('admin_enqueue_scripts', 'abr_enqueue_admin_scripts');
-function abr_enqueue_admin_scripts() {
-    wp_enqueue_script('abr-backup-script', plugin_dir_url(__FILE__) . 'js/abr-backup.js', ['jquery'], null, true);
-    wp_localize_script('abr-backup-script', 'abr_backup', [
-        'ajax_url' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('abr_ajax_backup_nonce')
-    ]);
-}
+add_action('abr_scheduled_backup', 'abr_create_backup');

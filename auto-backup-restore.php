@@ -16,6 +16,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ABR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('ABR_BACKUP_DIR', WP_CONTENT_DIR . '/uploads/backups/');
+define('ABR_BACKUP_DIR_WP_CONTENT', WP_CONTENT_DIR );
 
 // Ensure backup directory exists
 if (!file_exists(ABR_BACKUP_DIR)) {
@@ -32,13 +33,11 @@ require_once ABR_PLUGIN_DIR . 'includes/delete.php';
 
 
 
+// Enqueue scripts
 function abr_enqueue_scripts($hook) {
     if ($hook === 'toplevel_page_abr_backup') {
         wp_enqueue_script('abr-backup-js', plugin_dir_url(__FILE__) . 'assets/js/backup.js', array('jquery'), null, true);
-
-        // Correctly passing AJAX URL
-        $ajax_data = array('ajaxurl' => admin_url('admin-ajax.php'));
-        wp_localize_script('abr-backup-js', 'abr_ajax_object', $ajax_data);
+        wp_localize_script('abr-backup-js', 'abr_ajax_object', array('ajaxurl' => admin_url('admin-ajax.php')));
     }
 }
 add_action('admin_enqueue_scripts', 'abr_enqueue_scripts');
@@ -68,9 +67,8 @@ add_action('admin_init', function() {
         abr_settings_backup_page_content();
     }
 
-
-    if (isset($_GET['abr_restore'])) {
-        abr_restore_backup($_GET['abr_restore']);
+    if (isset($_GET['abr_restore']) && isset($_GET['type'])) {
+        abr_restore_backup($_GET['type'], $_GET['abr_restore']);
     }
 
     if (isset($_GET['abr_delete'])) {
