@@ -1,22 +1,61 @@
-# 📌 Auto Backup & Restore - WordPress Plugin
+# Auto Backup Restore Plugin
 
-This WordPress plugin allows you to **back up your entire site**, including the `wp-content/` directory and the database, into a **single ZIP file**. The backups are stored securely and can be restored when needed.
+The Auto Backup Restore plugin for WordPress allows you to create, manage, and restore backups of your WordPress site, including plugins, themes, uploads, and the database.
 
----
+## Features
 
-## 🔥 Key Features
+- Create backups of plugins, themes, uploads, and the database.
+- Schedule automatic backups (daily, weekly, monthly).
+- Restore backups easily from the admin panel.
+- Manage backup settings and view existing backups.
 
-✅ **Complete Backup**: Includes both **files** and **database** in one ZIP file.  
-✅ **No `mysqldump` Dependency**: Uses WordPress native methods for database export.  
-✅ **AJAX-based Backup System**: Runs in the background without freezing the site.  
-✅ **Automatic Directory Handling**: Creates backup directory if missing.  
-✅ **Error Logging**: Logs issues in case of failures.  
-✅ **Single Click Backup**: Prevents multiple ZIPs on one click.
+## Installation
 
----
+1. Upload the `auto-backup-restore` folder to the `/wp-content/plugins/` directory.
+2. Activate the plugin through the 'Plugins' menu in WordPress.
+3. Navigate to the 'Backup Settings' page under the 'Settings' menu to configure the plugin.
 
-## 📂 Installation Guide
+## Usage
 
-### 1️⃣ Manual Installation
-1. Download the plugin folder and **extract it**.
-2. Copy the folder to:  
+### Creating a Backup
+
+1. Go to the 'Backup Settings' page.
+2. Click on 'Add New Backup Setting'.
+3. Fill in the backup name and interval (daily, weekly, monthly).
+4. Click 'Add Backup' to save the settings.
+
+### Restoring a Backup
+
+1. Go to the 'Backup Settings' page.
+2. Find the backup you want to restore in the 'Current Backup Settings' table.
+3. Click on the 'Restore' link next to the backup.
+
+### Deleting a Backup
+
+1. Go to the 'Backup Settings' page.
+2. Find the backup you want to delete in the 'Current Backup Settings' table.
+3. Click on the 'Delete' link next to the backup.
+
+## Hooks and Filters
+
+### Actions
+
+- `abr_scheduled_backup`: Triggered to create a scheduled backup.
+
+### Filters
+
+- `abr_backup_options`: Filter the backup options before saving.
+
+## License
+
+This plugin is licensed under the GPLv2 or later.
+
+## Changelog
+
+### 1.0.0
+
+- Initial release.
+
+## Support
+
+For support, please visit the [support forum](https://wordpress.org/support/plugin/auto-backup-restore).

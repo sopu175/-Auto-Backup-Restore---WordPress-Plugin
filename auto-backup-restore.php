@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: Auto-Backup & One-Click Restore
-Plugin URI: https://yourwebsite.com
-Description: Backup and restore the WordPress plugin directory easily.
+Plugin URI: https://devsopu.com
+Description: Easily backup and restore your WordPress plugin directory. This plugin provides a simple and efficient way to create backups of your WordPress plugin directory and restore them with just one click.
 Version: 1.0
-Author: Your Name
-Author URI: https://yourwebsite.com
+Author: Saif Islam
+Author URI: https://devsopu.com
 License: GPL2
 */
 
@@ -75,3 +75,40 @@ add_action('admin_init', function() {
         abr_delete_backup($_GET['abr_delete']);
     }
 });
+
+
+// Activation hook
+register_activation_hook(__FILE__, 'abr_activate_plugin');
+function abr_activate_plugin() {
+    // Code to run on plugin activation
+    // For example, create necessary database tables or set default options
+    if (!file_exists(ABR_BACKUP_DIR)) {
+        if (!mkdir($concurrentDirectory = ABR_BACKUP_DIR, 0755, true) && !is_dir($concurrentDirectory)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+        }
+    }
+}
+
+// Deactivation hook
+register_deactivation_hook(__FILE__, 'abr_deactivate_plugin');
+function abr_deactivate_plugin() {
+    // Code to run on plugin deactivation
+    // Delete plugin options from wp_options table
+    delete_option('abr_backup_options');
+
+    // Delete the backups directory and its contents
+    $backup_dir = ABR_BACKUP_DIR;
+    if (file_exists($backup_dir)) {
+        // Recursively delete the directory and its contents
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($backup_dir, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($files as $fileinfo) {
+            $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
+            $todo($fileinfo->getRealPath());
+        }
+        rmdir($backup_dir);
+    }
+}
