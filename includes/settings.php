@@ -98,7 +98,7 @@ add_action('admin_init', function () {
     // Handle adding a new backup setting
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['abr_backup_nonce']) && wp_verify_nonce($_POST['abr_backup_nonce'], 'abr_add_backup')) {
         $backups = get_option('abr_backup_options', []);
-        $id = uniqid();
+        $id = uniqid('', true);
 
         $backups[$id] = [
             'name' => sanitize_text_field($_POST['backup_name']),

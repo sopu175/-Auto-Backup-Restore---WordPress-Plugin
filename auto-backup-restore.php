@@ -67,8 +67,8 @@ add_action('admin_init', function() {
         abr_settings_backup_page_content();
     }
 
-    if (isset($_GET['abr_restore']) && isset($_GET['type'])) {
-        abr_restore_backup($_GET['type'], $_GET['abr_restore']);
+    if (isset($_GET['abr_restore'])) {
+        abr_restore_backup($_GET['abr_restore']);
     }
 
     if (isset($_GET['abr_delete'])) {

@@ -4,87 +4,119 @@ if (!defined('ABSPATH')) {
 }
 
 // Restore Function
-function abr_restore_backup($backup_type = 'database', $backup_file = '') {
-    if (empty($backup_file)) {
-        error_log("Error: No backup file provided.");
-        return false;
+function abr_restore_backup($zip_file) {
+    $backup_dir = WP_CONTENT_DIR . '/uploads/backups/'; // Correct backup directory
+    $zip_path = $backup_dir . basename($zip_file); // Full path to ZIP file
+
+    error_log("Starting backup restore for: " . $zip_path);
+
+    // Check if the ZIP file exists
+    if (!file_exists($zip_path)) {
+        error_log("Error: ZIP file not found - " . $zip_path);
+        wp_redirect(admin_url('admin.php?page=abr_backup&message=ZipFileNotFound'));
+        exit;
     }
 
-    if (!defined('ABR_BACKUP_DIR')) {
-        define('ABR_BACKUP_DIR', WP_CONTENT_DIR . '/abr_backups/');
-    }
-
-    $file_path = ABR_BACKUP_DIR . $backup_file;
-
-    if (!file_exists($file_path)) {
-        error_log("Error: Backup file not found - {$file_path}");
-        return false;
-    }
-
+    // Extract ZIP file
     $zip = new ZipArchive();
-    if ($zip->open($file_path) !== true) {
-        error_log("Error: Could not open ZIP file - {$file_path}");
-        return false;
-    }
+    if ($zip->open($zip_path) === TRUE) {
+        error_log("Extracting ZIP file...");
 
-    switch ($backup_type) {
-        case 'plugins':
-            if (!is_writable(WP_PLUGIN_DIR)) {
-                error_log("Error: Plugins directory is not writable.");
-                return false;
-            }
-            $zip->extractTo(WP_PLUGIN_DIR);
-            break;
+        // Determine the restore location
+        if (strpos($zip_file, 'backup-plugins-') !== false) {
+            $restore_location = WP_CONTENT_DIR; // Plugins will be extracted directly here
 
-        case 'themes':
-            if (!is_writable(get_theme_root())) {
-                error_log("Error: Themes directory is not writable.");
-                return false;
-            }
-            $zip->extractTo(get_theme_root());
-            break;
+            wp_redirect(admin_url('admin.php?page=abr_backup&message=success_restore-plugins'));
 
-        case 'uploads':
-            $uploads_dir = WP_CONTENT_DIR . '/uploads/';
-            if (!is_writable($uploads_dir)) {
-                error_log("Error: Uploads directory is not writable.");
-                return false;
-            }
-            $zip->extractTo($uploads_dir);
-            break;
+        }elseif (strpos($zip_file, 'backup-themes-') !== false) {
+            $restore_location = WP_CONTENT_DIR; // Plugins will be extracted directly here
 
-        case 'database':
-            if ($zip->locateName('database.sql') !== false) {
-                $zip->extractTo(ABR_BACKUP_DIR, 'database.sql');
-                $db_backup_file = ABR_BACKUP_DIR . 'database.sql';
+            wp_redirect(admin_url('admin.php?page=abr_backup&message=success_restore-themes'));
 
-                if (file_exists($db_backup_file)) {
-                    abr_import_database($db_backup_file);
-                    unlink($db_backup_file);
-                } else {
-                    error_log("Error: Extracted database.sql not found.");
-                    return false;
+        }elseif (strpos($zip_file, 'backup-uploads-') !== false) {
+            $restore_location = WP_CONTENT_DIR; // Plugins will be extracted directly here
+
+            wp_redirect(admin_url('admin.php?page=abr_backup&message=success_restore-uploads'));
+
+        } elseif (strpos($zip_file, 'backup-db-') !== false) {
+
+            $restore_location = $backup_dir; // Plugins will be extracted directly here
+            $zip->extractTo($restore_location);
+            error_log("Detected database backup. Restoring database...");
+
+
+            $filename_without_extension = str_replace('.zip', '', $zip_file);
+            $db_file = $backup_dir .  '/database.sql';
+
+            if (file_exists($db_file)) {
+                $restore_result = abr_import_database($db_file);
+                if (!$restore_result) {
+                    error_log("Error: Database restoration failed.");
+                    wp_redirect(admin_url('admin.php?page=abr_backup&message=DatabaseRestoreFailed'));
+                    exit;
+                }else{
+                    wp_redirect(admin_url('admin.php?page=abr_backup&message=DatabaseRestoreSucces'));
+
                 }
             } else {
-                error_log("Error: database.sql not found in backup.");
-                return false;
+                error_log("No database file found!");
+                wp_redirect(admin_url('admin.php?page=abr_backup&message=DatabaseFileMissing'));
+                exit;
             }
-            break;
+        } else {
+            error_log("Unknown backup type.");
+            wp_redirect(admin_url('admin.php?page=abr_backup&message=InvalidBackupType'));
+            exit;
+        }
+        $zip->extractTo($restore_location);
+        $zip->close();
+        error_log("Extraction complete.");
 
-        default:
-            error_log("Error: Invalid backup type specified - {$backup_type}");
-            return false;
+    } else {
+        error_log("Error: Could not open ZIP file " . $zip_path);
+        wp_redirect(admin_url('admin.php?page=abr_backup&message=ZipExtractFailed'));
+        exit;
     }
 
-    $zip->close();
-    abr_send_restore_email($backup_type, $backup_file);
+    // If it's not a plugin backup, move files to their respective locations
+    error_log("Backup restoration completed successfully!");
 
-    // Redirect after success
-    wp_redirect(admin_url("admin.php?page=abr_backup&message=success_restore&restored={$backup_type}"));
-    exit;
+    // ✅ Redirect to admin page with success message
+//    wp_redirect(admin_url('admin.php?page=abr_backup&message=success_restore'));
+//    exit;
 }
 
-// Function to import database using wpdb (No CLI needed)
+// Function to move extracted files to the correct location
+function abr_restore_files($source_dir, $destination_dir) {
+    $files = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($source_dir, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::LEAVES_ONLY
+    );
+
+    foreach ($files as $file) {
+        if ($file->isFile()) {
+            $file_path = $file->getRealPath();
+            $relative_path = substr($file_path, strlen($source_dir) + 1); // Ensure correct relative path
+            $destination = $destination_dir . DIRECTORY_SEPARATOR . $relative_path;
+
+            // Ensure destination directory exists
+            wp_mkdir_p(dirname($destination));
+
+            // Move the file
+            if (!rename($file_path, $destination)) {
+                error_log("Error: Failed to restore file {$relative_path}");
+                return false;
+            }
+
+            // Set proper file permissions
+            chmod($destination, 0644);
+        }
+    }
+    return true;
+}
+
+// Function to import database using wpdb
+// ✅ Fixed Database Restore Function (Ignores Duplicate Tables)
 function abr_import_database($file_path) {
     global $wpdb;
 
@@ -99,64 +131,25 @@ function abr_import_database($file_path) {
         return false;
     }
 
-    $queries = explode(";\n", $sql);
+    // Fix: Modify `CREATE TABLE` statements to include `IF NOT EXISTS`
+    $sql = preg_replace('/CREATE TABLE `([^`]+)`/', 'CREATE TABLE IF NOT EXISTS `$1`', $sql);
+
+    // Fix: Use `INSERT IGNORE` instead of `INSERT` to prevent duplicate entries
+    $sql = str_replace('INSERT INTO', 'INSERT IGNORE INTO', $sql);
+
+    // Split SQL file into valid queries
+    $queries = preg_split('/;\s*\n/', $sql, -1, PREG_SPLIT_NO_EMPTY);
+
     foreach ($queries as $query) {
-        if (!empty(trim($query))) {
+        $query = trim($query);
+        if (!empty($query)) {
             $result = $wpdb->query($query);
             if ($result === false) {
-                error_log("Error: Failed to execute query - " . $query);
+                error_log("Error: Failed to execute query - " . substr($query, 0, 100) . "...");
+                return false;
             }
         }
     }
 
     return true;
-}
-
-// Send Email Notification After Restore
-function abr_send_restore_email($backup_type, $backup_file) {
-    $admin_email = get_option('admin_email');
-    $subject = "WordPress Backup Restored - {$backup_type}";
-    $message = "Your WordPress backup for '{$backup_type}' has been successfully restored.\n\n";
-    $message .= "Backup File: {$backup_file}\n";
-    $message .= "Date: " . date('Y-m-d H:i:s') . "\n\n";
-    $message .= "If you did not request this action, please check your site immediately.";
-
-    wp_mail($admin_email, $subject, $message);
-}
-
-// Upload Backups to Cloud (Google Drive, Dropbox, AWS S3)
-function abr_upload_to_cloud($backup_file) {
-    $cloud_provider = get_option('abr_cloud_storage'); // Get cloud storage option
-
-    switch ($cloud_provider) {
-        case 'google_drive':
-            abr_upload_to_google_drive($backup_file);
-            break;
-        case 'dropbox':
-            abr_upload_to_dropbox($backup_file);
-            break;
-        case 'aws_s3':
-            abr_upload_to_aws_s3($backup_file);
-            break;
-        default:
-            error_log("Error: No cloud storage provider selected.");
-            return false;
-    }
-
-    return true;
-}
-
-// Google Drive Upload (Placeholder)
-function abr_upload_to_google_drive($backup_file) {
-    error_log("Uploading {$backup_file} to Google Drive... (Feature Not Implemented Yet)");
-}
-
-// Dropbox Upload (Placeholder)
-function abr_upload_to_dropbox($backup_file) {
-    error_log("Uploading {$backup_file} to Dropbox... (Feature Not Implemented Yet)");
-}
-
-// AWS S3 Upload (Placeholder)
-function abr_upload_to_aws_s3($backup_file) {
-    error_log("Uploading {$backup_file} to AWS S3... (Feature Not Implemented Yet)");
 }
