@@ -150,7 +150,8 @@ settings_errors('abr_messages');
       <p><?php _e('No backups found. Create your first backup using the button above.', 'auto-backup-restore'); ?></p>
       <?php if (!$is_writable): ?>
       <p><strong><?php _e('Note:', 'auto-backup-restore'); ?></strong>
-         <?php printf(__('Backup directory is not writable: %s', 'auto-backup-restore'), ABR_BACKUP_DIR); ?></p>
+         /* translators: %s is the folder path */
+         <?php sprintf(__('Backup directory is not writable: %s', 'auto-backup-restore'), ABR_BACKUP_DIR); ?></p>
       <?php endif; ?>
    </div>
    <?php else: ?>

@@ -351,6 +351,7 @@ Auto Backup & Restore Plugin', 'auto-backup-restore'),
                     continue;
                 }
 
+                // Direct SQL query for database restore.
                 $result = $wpdb->query($query);
                 if ($result === false) {
                     error_log("Database restore query failed: " . substr($query, 0, 100) . "...");
