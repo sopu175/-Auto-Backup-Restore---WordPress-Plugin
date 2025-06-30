@@ -1,7 +1,7 @@
 /* Auto Backup & Restore Pro - Modern Design by Saif Islam */
 
 :root {
-    --abr-primary: #667eea;
+    --abr-primary: #212121;
     --abr-secondary: #764ba2;
     --abr-success: #10b981;
     --abr-warning: #f59e0b;
@@ -9,13 +9,8 @@
     --abr-dark: #1f2937;
     --abr-light: #f8fafc;
     --abr-border: #e5e7eb;
-    --abr-shadow:
-            0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --abr-gradient: linear-gradient(
-            135deg,
-            var(--abr-primary) 0%,
-            var(--abr-secondary) 100%
-    );
+    --abr-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --abr-gradient: linear-gradient(135deg, #212121 0%, #424242 100%);
 }
 
 /* Instructions Panel */
@@ -23,7 +18,7 @@
     background: white;
     border-radius: 16px;
     padding: 30px;
-    margin: 25px 0;
+    margin: 0;
     box-shadow: var(--abr-shadow);
     border-left: 6px solid var(--abr-primary);
 }
@@ -46,9 +41,8 @@
     border-radius: 12px;
     padding: 20px;
     text-align: center;
-    transition:
-            transform 0.3s ease,
-            box-shadow 0.3s ease;
+    transition: transform 0.3s ease,
+    box-shadow 0.3s ease;
     border: 1px solid var(--abr-border);
 }
 
@@ -58,7 +52,7 @@
 }
 
 .abr-instruction-icon {
-    font-size: 48px;
+    font-size: 30px;
     margin-bottom: 15px;
     display: block;
 }
@@ -81,24 +75,27 @@
 .wrap h1.wp-heading-inline {
     background: var(--abr-gradient);
     color: white;
-    padding: 20px 30px;
-    border-radius: 12px;
     margin: 0 0 30px 0;
-    font-size: 28px;
     font-weight: 700;
     box-shadow: var(--abr-shadow);
     position: relative;
     overflow: hidden;
+    padding: 20px;
+    border-radius: 30px;
+    font-size: 18px;
+    line-height: 25px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .wrap h1.wp-heading-inline::before {
     content: "🛡️";
-    margin-right: 15px;
     font-size: 32px;
 }
 
 .wrap h1.wp-heading-inline::after {
-    content: "by Saif Islam";
+    content: "by Saif";
     position: absolute;
     bottom: 5px;
     right: 20px;
@@ -124,9 +121,8 @@
     box-shadow: var(--abr-shadow);
     position: relative;
     overflow: hidden;
-    transition:
-            transform 0.3s ease,
-            box-shadow 0.3s ease;
+    transition: transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .abr-stat-box:hover {
@@ -237,12 +233,15 @@
     border-radius: 16px;
     box-shadow: var(--abr-shadow);
     border-left: 6px solid var(--abr-primary);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .abr-actions .button-primary {
     background: var(--abr-gradient);
     border: none;
-    padding: 15px 30px;
+    padding: 5px 25px !important;
     font-size: 16px;
     font-weight: 600;
     border-radius: 50px;
@@ -381,11 +380,15 @@
     background: white;
     border: 2px solid var(--abr-border);
     color: var(--abr-dark);
-    padding: 12px 25px;
+    padding: 7px 15px;
     border-radius: 50px;
     font-weight: 500;
     margin-left: 15px;
     transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    justify-content: center;
 }
 
 .abr-actions .button-secondary:hover {
@@ -524,7 +527,7 @@
 
 .wp-list-table thead th {
     background: var(--abr-gradient);
-    color: white;
+    color: white !important;
     font-weight: 600;
     padding: 20px;
     border: none;
@@ -901,4 +904,9 @@
 
 .abr-info-box table tr:last-child td {
     border-bottom: none;
+}
+
+
+.wp-list-table {
+
 }

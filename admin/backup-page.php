@@ -81,7 +81,7 @@ settings_errors('abr_messages');
 
     <!-- Safety Notice -->
     <div class="abr-safety-notice">
-        <h4>���️ <?php _e('Important Safety Information', ABR_TEXT_DOMAIN); ?></h4>
+        <h4>�️ <?php _e('Important Safety Information', ABR_TEXT_DOMAIN); ?></h4>
         <ul>
             <li><strong><?php _e('Test Before Restore:', ABR_TEXT_DOMAIN); ?></strong> <?php _e('Always test restores on a staging site first before applying to production.', ABR_TEXT_DOMAIN); ?></li>
             <li><strong><?php _e('Backup Before Restore:', ABR_TEXT_DOMAIN); ?></strong> <?php _e('Create a fresh backup before restoring an older one to have a fallback option.', ABR_TEXT_DOMAIN); ?></li>
