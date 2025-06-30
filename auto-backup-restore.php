@@ -82,7 +82,7 @@ class AutoBackupRestore {
 
     public function init() {
         // Load text domain for translations
-        load_plugin_textdomain(ABR_TEXT_DOMAIN, false, dirname(plugin_basename(ABR_PLUGIN_FILE)) . '/languages');
+        load_plugin_textdomain('auto-backup-restore', false, dirname(plugin_basename(ABR_PLUGIN_FILE)) . '/languages');
     }
 
     public function activate() {
@@ -139,8 +139,8 @@ class AutoBackupRestore {
 
     public function add_admin_menu() {
         add_menu_page(
-            __('Auto Backup & Restore Pro', ABR_TEXT_DOMAIN),
-            __('Backup Pro', ABR_TEXT_DOMAIN),
+            __('Auto Backup & Restore Pro', 'auto-backup-restore'),
+            __('Backup Pro', 'auto-backup-restore'),
             'manage_options',
             'abr-backup',
             array($this, 'admin_page'),
@@ -150,8 +150,8 @@ class AutoBackupRestore {
 
         add_submenu_page(
             'abr-backup',
-            __('Settings', ABR_TEXT_DOMAIN),
-            __('Settings', ABR_TEXT_DOMAIN),
+            __('Settings', 'auto-backup-restore'),
+            __('Settings', 'auto-backup-restore'),
             'manage_options',
             'abr-settings',
             array($this, 'settings_page')
@@ -167,14 +167,14 @@ class AutoBackupRestore {
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('abr_ajax_nonce'),
                 'strings' => array(
-                    'backup_in_progress' => __('Backup in progress...', ABR_TEXT_DOMAIN),
-                    'backup_completed' => __('Backup completed successfully!', ABR_TEXT_DOMAIN),
-                    'backup_failed' => __('Backup failed. Please try again.', ABR_TEXT_DOMAIN),
-                    'confirm_restore' => __('Are you sure you want to restore this backup? This will overwrite current files and database.', ABR_TEXT_DOMAIN),
-                    'confirm_delete' => __('Are you sure you want to delete this backup?', ABR_TEXT_DOMAIN),
-                    'restore_in_progress' => __('Restore in progress...', ABR_TEXT_DOMAIN),
-                    'restore_completed' => __('Restore completed successfully!', ABR_TEXT_DOMAIN),
-                    'restore_failed' => __('Restore failed. Please try again.', ABR_TEXT_DOMAIN)
+                    'backup_in_progress' => __('Backup in progress...', 'auto-backup-restore'),
+                    'backup_completed' => __('Backup completed successfully!', 'auto-backup-restore'),
+                    'backup_failed' => __('Backup failed. Please try again.', 'auto-backup-restore'),
+                    'confirm_restore' => __('Are you sure you want to restore this backup? This will overwrite current files and database.', 'auto-backup-restore'),
+                    'confirm_delete' => __('Are you sure you want to delete this backup?', 'auto-backup-restore'),
+                    'restore_in_progress' => __('Restore in progress...', 'auto-backup-restore'),
+                    'restore_completed' => __('Restore completed successfully!', 'auto-backup-restore'),
+                    'restore_failed' => __('Restore failed. Please try again.', 'auto-backup-restore')
                 )
             ));
         }
@@ -190,7 +190,7 @@ class AutoBackupRestore {
 
     public function handle_admin_actions() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.', ABR_TEXT_DOMAIN));
+            wp_die(__('You do not have sufficient permissions to access this page.', 'auto-backup-restore'));
         }
 
         // Handle backup creation
@@ -200,13 +200,13 @@ class AutoBackupRestore {
                 $result = $backup->create_full_backup();
 
                 if ($result['success']) {
-                    add_settings_error('abr_messages', 'backup_success', esc_html__('Backup created successfully!', ABR_TEXT_DOMAIN), 'success');
+                    add_settings_error('abr_messages', 'backup_success', esc_html__('Backup created successfully!', 'auto-backup-restore'), 'success');
                 } else {
                     add_settings_error('abr_messages', 'backup_error', esc_html($result['message']), 'error');
                 }
             } catch (Exception $e) {
                 error_log('ABR Admin Action Error: ' . $e->getMessage());
-                add_settings_error('abr_messages', 'backup_error', esc_html__('An error occurred while creating the backup. Please try again.', ABR_TEXT_DOMAIN), 'error');
+                add_settings_error('abr_messages', 'backup_error', esc_html__('An error occurred while creating the backup. Please try again.', 'auto-backup-restore'), 'error');
             }
         }
 
@@ -217,7 +217,7 @@ class AutoBackupRestore {
 
                 // Validate backup file
                 if (empty($backup_file) || !preg_match('/^[a-zA-Z0-9\-_.]+\.zip$/', $backup_file)) {
-                    throw new Exception(__('Invalid backup file name.', ABR_TEXT_DOMAIN));
+                    throw new Exception(__('Invalid backup file name.', 'auto-backup-restore'));
                 }
 
                 $restore = new ABR_Restore();
@@ -235,7 +235,7 @@ class AutoBackupRestore {
                 wp_redirect(add_query_arg(array(
                     'page' => 'abr-backup',
                     'message' => 'error',
-                    'details' => urlencode(__('Restore failed: ', ABR_TEXT_DOMAIN) . $e->getMessage())
+                    'details' => urlencode(__('Restore failed: ', 'auto-backup-restore') . $e->getMessage())
                 ), admin_url('admin.php')));
                 exit;
             }
@@ -248,21 +248,21 @@ class AutoBackupRestore {
 
                 // Validate backup file
                 if (empty($backup_file) || !preg_match('/^[a-zA-Z0-9\-_.]+\.zip$/', $backup_file)) {
-                    throw new Exception(__('Invalid backup file name.', ABR_TEXT_DOMAIN));
+                    throw new Exception(__('Invalid backup file name.', 'auto-backup-restore'));
                 }
 
                 $file_path = ABR_BACKUP_DIR . $backup_file;
 
                 // Security check
                 if (dirname($file_path) !== rtrim(ABR_BACKUP_DIR, '/')) {
-                    throw new Exception(__('Invalid file path.', ABR_TEXT_DOMAIN));
+                    throw new Exception(__('Invalid file path.', 'auto-backup-restore'));
                 }
 
                 if (file_exists($file_path) && unlink($file_path)) {
-                    $message = __('Backup deleted successfully.', ABR_TEXT_DOMAIN);
+                    $message = __('Backup deleted successfully.', 'auto-backup-restore');
                     $type = 'success';
                 } else {
-                    $message = __('Failed to delete backup file.', ABR_TEXT_DOMAIN);
+                    $message = __('Failed to delete backup file.', 'auto-backup-restore');
                     $type = 'error';
                 }
 
@@ -277,7 +277,7 @@ class AutoBackupRestore {
                 wp_redirect(add_query_arg(array(
                     'page' => 'abr-backup',
                     'message' => 'error',
-                    'details' => urlencode(__('Delete failed: ', ABR_TEXT_DOMAIN) . $e->getMessage())
+                    'details' => urlencode(__('Delete failed: ', 'auto-backup-restore') . $e->getMessage())
                 ), admin_url('admin.php')));
                 exit;
             }
@@ -290,13 +290,13 @@ class AutoBackupRestore {
                 $result = $settings->save_settings($_POST);
 
                 if ($result) {
-                    add_settings_error('abr_messages', 'settings_saved', esc_html__('Settings saved successfully!', ABR_TEXT_DOMAIN), 'success');
+                    add_settings_error('abr_messages', 'settings_saved', esc_html__('Settings saved successfully!', 'auto-backup-restore'), 'success');
                 } else {
-                    add_settings_error('abr_messages', 'settings_error', esc_html__('Some settings could not be saved. Please check the validation errors above.', ABR_TEXT_DOMAIN), 'error');
+                    add_settings_error('abr_messages', 'settings_error', esc_html__('Some settings could not be saved. Please check the validation errors above.', 'auto-backup-restore'), 'error');
                 }
             } catch (Exception $e) {
                 error_log('ABR Settings Save Error: ' . $e->getMessage());
-                add_settings_error('abr_messages', 'settings_error', esc_html__('An error occurred while saving settings. Please try again.', ABR_TEXT_DOMAIN), 'error');
+                add_settings_error('abr_messages', 'settings_error', esc_html__('An error occurred while saving settings. Please try again.', 'auto-backup-restore'), 'error');
             }
         }
     }
@@ -351,12 +351,12 @@ class AutoBackupRestore {
     public function ajax_create_backup() {
         // Verify nonce and permissions
         if (!wp_verify_nonce($_POST['nonce'], 'abr_ajax_nonce') || !current_user_can('manage_options')) {
-            wp_send_json_error(__('Security check failed. Please refresh the page and try again.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Security check failed. Please refresh the page and try again.', 'auto-backup-restore'));
         }
 
         // Check if backup is already in progress
         if (get_transient('abr_backup_progress')) {
-            wp_send_json_error(__('Another backup is already in progress. Please wait for it to complete.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Another backup is already in progress. Please wait for it to complete.', 'auto-backup-restore'));
         }
 
         // Increase time and memory limits for large backups
@@ -384,7 +384,7 @@ class AutoBackupRestore {
             // Clear progress on exception
             delete_transient('abr_backup_progress');
             error_log('ABR AJAX Backup Error: ' . $e->getMessage());
-            wp_send_json_error(__('Backup failed: ', ABR_TEXT_DOMAIN) . $e->getMessage());
+            wp_send_json_error(__('Backup failed: ', 'auto-backup-restore') . $e->getMessage());
         }
     }
 
@@ -410,23 +410,23 @@ class AutoBackupRestore {
     public function ajax_restore_backup() {
         // Verify nonce and permissions
         if (!wp_verify_nonce($_POST['nonce'], 'abr_ajax_nonce') || !current_user_can('manage_options')) {
-            wp_send_json_error(__('Security check failed. Please refresh the page and try again.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Security check failed. Please refresh the page and try again.', 'auto-backup-restore'));
         }
 
         // Check if restore is already in progress
         if (get_transient('abr_restore_progress')) {
-            wp_send_json_error(__('Another restore is already in progress. Please wait for it to complete.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Another restore is already in progress. Please wait for it to complete.', 'auto-backup-restore'));
         }
 
         $backup_file = sanitize_file_name($_POST['backup_file']);
         if (empty($backup_file) || !preg_match('/^[a-zA-Z0-9\-_.]+\.zip$/', $backup_file)) {
-            wp_send_json_error(__('Invalid backup file name.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Invalid backup file name.', 'auto-backup-restore'));
         }
 
         // Verify backup file exists and is in backup directory
         $backup_path = ABR_BACKUP_DIR . $backup_file;
         if (!file_exists($backup_path) || !is_readable($backup_path)) {
-            wp_send_json_error(__('Backup file not found or not readable.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Backup file not found or not readable.', 'auto-backup-restore'));
         }
 
         // Set initial progress
@@ -471,7 +471,7 @@ class AutoBackupRestore {
         // Generate backup list HTML
         ob_start();
         if (empty($backup_files)) {
-            echo '<tr><td colspan="4" class="no-backups-message">' . __('No backup files found. Create your first backup using the button above.', ABR_TEXT_DOMAIN) . '</td></tr>';
+            echo '<tr><td colspan="4" class="no-backups-message">' . __('No backup files found. Create your first backup using the button above.', 'auto-backup-restore') . '</td></tr>';
         } else {
             foreach ($backup_files as $backup) {
                 if (isset($backup['name']) && isset($backup['formatted_date']) && isset($backup['formatted_size'])) {
@@ -480,8 +480,8 @@ class AutoBackupRestore {
                     echo '<td>' . esc_html($backup['formatted_date']) . '</td>';
                     echo '<td>' . esc_html($backup['formatted_size']) . '</td>';
                     echo '<td>';
-                    echo '<button type="button" class="button button-secondary abr-restore-btn" data-backup-file="' . esc_attr($backup['name']) . '">' . __('Restore', ABR_TEXT_DOMAIN) . '</button> ';
-                    echo '<button type="button" class="button button-link-delete abr-delete-btn" data-backup-file="' . esc_attr($backup['name']) . '">' . __('Delete', ABR_TEXT_DOMAIN) . '</button>';
+                    echo '<button type="button" class="button button-secondary abr-restore-btn" data-backup-file="' . esc_attr($backup['name']) . '">' . __('Restore', 'auto-backup-restore') . '</button> ';
+                    echo '<button type="button" class="button button-link-delete abr-delete-btn" data-backup-file="' . esc_attr($backup['name']) . '">' . __('Delete', 'auto-backup-restore') . '</button>';
                     echo '</td>';
                     echo '</tr>';
                 }
@@ -499,48 +499,48 @@ class AutoBackupRestore {
     public function ajax_delete_backup() {
         // Verify nonce and permissions
         if (!wp_verify_nonce($_POST['nonce'], 'abr_ajax_nonce') || !current_user_can('manage_options')) {
-            wp_send_json_error(__('Security check failed. Please refresh the page and try again.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Security check failed. Please refresh the page and try again.', 'auto-backup-restore'));
         }
 
         $backup_file = sanitize_file_name($_POST['backup_file']);
         if (empty($backup_file) || !preg_match('/^[a-zA-Z0-9\-_.]+\.zip$/', $backup_file)) {
-            wp_send_json_error(__('Invalid backup file name.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Invalid backup file name.', 'auto-backup-restore'));
         }
 
         $file_path = ABR_BACKUP_DIR . $backup_file;
 
         // Security check: ensure file is in backup directory
         if (dirname($file_path) !== rtrim(ABR_BACKUP_DIR, '/')) {
-            wp_send_json_error(__('Invalid file path.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Invalid file path.', 'auto-backup-restore'));
         }
 
         if (!file_exists($file_path)) {
-            wp_send_json_error(__('Backup file not found.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Backup file not found.', 'auto-backup-restore'));
         }
 
         if (unlink($file_path)) {
             wp_send_json_success(array(
-                'message' => __('Backup deleted successfully.', ABR_TEXT_DOMAIN)
+                'message' => __('Backup deleted successfully.', 'auto-backup-restore')
             ));
         } else {
-            wp_send_json_error(__('Failed to delete backup file. Please check file permissions.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Failed to delete backup file. Please check file permissions.', 'auto-backup-restore'));
         }
     }
 
     public function ajax_test_email() {
         // Verify nonce and permissions
         if (!wp_verify_nonce($_POST['nonce'], 'abr_ajax_nonce') || !current_user_can('manage_options')) {
-            wp_send_json_error(__('Security check failed. Please refresh the page and try again.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Security check failed. Please refresh the page and try again.', 'auto-backup-restore'));
         }
 
         $settings = get_option('abr_settings', array());
 
         if (empty($settings['notification_email'])) {
-            wp_send_json_error(__('Please set a notification email address before testing.', ABR_TEXT_DOMAIN));
+            wp_send_json_error(__('Please set a notification email address before testing.', 'auto-backup-restore'));
         }
 
         $to = $settings['notification_email'];
-        $subject = sprintf(__('🧪 Test Email - Auto Backup & Restore Pro - %s', ABR_TEXT_DOMAIN), get_bloginfo('name'));
+        $subject = sprintf(__('🧪 Test Email - Auto Backup & Restore Pro - %s', 'auto-backup-restore'), get_bloginfo('name'));
 
         $message = sprintf(__('Hello,
 
@@ -554,7 +554,7 @@ Plugin Version: %s
 If you received this email, your email configuration is working correctly!
 
 Best regards,
-Auto Backup & Restore Pro', ABR_TEXT_DOMAIN),
+Auto Backup & Restore Pro', 'auto-backup-restore'),
             get_bloginfo('name'),
             get_site_url(),
             date_i18n(get_option('date_format') . ' ' . get_option('time_format')),
@@ -578,17 +578,17 @@ Auto Backup & Restore Pro', ABR_TEXT_DOMAIN),
 
         if ($mail_sent) {
             wp_send_json_success(array(
-                'message' => __('Test email sent successfully! Check your inbox.', ABR_TEXT_DOMAIN)
+                'message' => __('Test email sent successfully! Check your inbox.', 'auto-backup-restore')
             ));
         } else {
             // Check if localhost and save to file
             if ($this->is_localhost()) {
                 $this->save_test_email_to_file($to, $subject, $message);
                 wp_send_json_success(array(
-                    'message' => __('Email saved to file for localhost testing. Check: /wp-content/uploads/abr-backups/emails/', ABR_TEXT_DOMAIN)
+                    'message' => __('Email saved to file for localhost testing. Check: /wp-content/uploads/abr-backups/emails/', 'auto-backup-restore')
                 ));
             } else {
-                wp_send_json_error(__('Failed to send test email. Please check your email configuration.', ABR_TEXT_DOMAIN));
+                wp_send_json_error(__('Failed to send test email. Please check your email configuration.', 'auto-backup-restore'));
             }
         }
     }

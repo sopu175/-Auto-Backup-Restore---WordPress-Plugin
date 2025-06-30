@@ -1,9 +1,9 @@
 === Auto-Backup & One-Click Restore Pro ===
 Contributors: saifislam
 Donate link: https://devsopu.com
-Tags: backup, restore, database, migration, security, automatic, scheduled, ajax, real-time, email
+Tags: backup, restore, database, migration, automatic, scheduled, ajax, real-time
 Requires at least: 5.0
-Tested up to: 6.4
+Tested up to: 6.8
 Requires PHP: 7.4
 Stable tag: 1.2.0
 License: GPLv2 or later

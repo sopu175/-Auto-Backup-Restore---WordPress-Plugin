@@ -14,63 +14,63 @@ class ABR_Restore {
     public function restore_backup($backup_file) {
         try {
             // Set initial progress
-            $this->update_restore_progress(5, __('Starting restore process...', ABR_TEXT_DOMAIN));
+            $this->update_restore_progress(5, __('Starting restore process...', 'auto-backup-restore'));
 
             // Validate backup file name
             if (empty($backup_file) || !preg_match('/^[a-zA-Z0-9\-_.]+\.zip$/', $backup_file)) {
-                throw new Exception(__('Invalid backup file name.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Invalid backup file name.', 'auto-backup-restore'));
             }
 
             $backup_path = $this->backup_dir . $backup_file;
 
             // Security check: ensure file is in backup directory
             if (dirname($backup_path) !== rtrim($this->backup_dir, '/')) {
-                throw new Exception(__('Security violation: Invalid file path.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Security violation: Invalid file path.', 'auto-backup-restore'));
             }
 
             if (!file_exists($backup_path)) {
-                $this->update_restore_progress(0, __('Backup file not found.', ABR_TEXT_DOMAIN));
-                return array('success' => false, 'message' => __('Backup file not found.', ABR_TEXT_DOMAIN));
+                $this->update_restore_progress(0, __('Backup file not found.', 'auto-backup-restore'));
+                return array('success' => false, 'message' => __('Backup file not found.', 'auto-backup-restore'));
             }
 
             if (!is_readable($backup_path)) {
-                throw new Exception(__('Backup file is not readable. Please check file permissions.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Backup file is not readable. Please check file permissions.', 'auto-backup-restore'));
             }
 
             // Check available disk space
             $backup_size = filesize($backup_path);
             $free_space = disk_free_space($this->backup_dir);
             if ($free_space !== false && $free_space < ($backup_size * 2)) {
-                throw new Exception(__('Insufficient disk space for restoration. Need at least twice the backup size.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Insufficient disk space for restoration. Need at least twice the backup size.', 'auto-backup-restore'));
             }
 
             // Check if ZipArchive is available
             if (!class_exists('ZipArchive')) {
-                $this->update_restore_progress(0, __('ZipArchive not available.', ABR_TEXT_DOMAIN));
-                return array('success' => false, 'message' => __('ZipArchive extension is not available on this server.', ABR_TEXT_DOMAIN));
+                $this->update_restore_progress(0, __('ZipArchive not available.', 'auto-backup-restore'));
+                return array('success' => false, 'message' => __('ZipArchive extension is not available on this server.', 'auto-backup-restore'));
             }
 
-            $this->update_restore_progress(10, __('Opening backup file...', ABR_TEXT_DOMAIN));
+            $this->update_restore_progress(10, __('Opening backup file...', 'auto-backup-restore'));
 
             $zip = new ZipArchive();
             $open_result = $zip->open($backup_path);
             if ($open_result !== TRUE) {
                 $error_msg = $this->get_zip_error_message($open_result);
-                $this->update_restore_progress(0, __('Could not open backup file.', ABR_TEXT_DOMAIN));
-                return array('success' => false, 'message' => __('Could not open backup file: ', ABR_TEXT_DOMAIN) . $error_msg);
+                $this->update_restore_progress(0, __('Could not open backup file.', 'auto-backup-restore'));
+                return array('success' => false, 'message' => __('Could not open backup file: ', 'auto-backup-restore') . $error_msg);
             }
 
-            $this->update_restore_progress(15, __('Preparing extraction directory...', ABR_TEXT_DOMAIN));
+            $this->update_restore_progress(15, __('Preparing extraction directory...', 'auto-backup-restore'));
 
             // Create temporary extraction directory
             $temp_dir = $this->backup_dir . 'temp_restore_' . time() . '/';
             if (!wp_mkdir_p($temp_dir)) {
                 $zip->close();
-                $this->update_restore_progress(0, __('Failed to create temporary directory.', ABR_TEXT_DOMAIN));
-                return array('success' => false, 'message' => __('Failed to create temporary extraction directory.', ABR_TEXT_DOMAIN));
+                $this->update_restore_progress(0, __('Failed to create temporary directory.', 'auto-backup-restore'));
+                return array('success' => false, 'message' => __('Failed to create temporary extraction directory.', 'auto-backup-restore'));
             }
 
-            $this->update_restore_progress(20, __('Extracting backup file...', ABR_TEXT_DOMAIN));
+            $this->update_restore_progress(20, __('Extracting backup file...', 'auto-backup-restore'));
 
             // Extract backup with progress tracking
             $total_files = $zip->numFiles;
@@ -85,13 +85,13 @@ class ABR_Restore {
                     // Update progress every 10% of files
                     if ($extracted % max(1, floor($total_files / 10)) === 0) {
                         $extraction_progress = 20 + (($extracted / $total_files) * 10); // 20% to 30%
-                        $this->update_restore_progress($extraction_progress, sprintf(__('Extracting files... %d/%d', ABR_TEXT_DOMAIN), $extracted, $total_files));
+                        $this->update_restore_progress($extraction_progress, sprintf(__('Extracting files... %d/%d', 'auto-backup-restore'), $extracted, $total_files));
                     }
                 }
             }
 
             $zip->close();
-            $this->update_restore_progress(30, __('Extraction completed. Preparing restore...', ABR_TEXT_DOMAIN));
+            $this->update_restore_progress(30, __('Extraction completed. Preparing restore...', 'auto-backup-restore'));
 
             $restored_items = array();
             $current_progress = 30;
@@ -99,61 +99,61 @@ class ABR_Restore {
 
             // Restore plugins
             if (is_dir($temp_dir . 'plugins')) {
-                $this->update_restore_progress($current_progress, __('Restoring plugins...', ABR_TEXT_DOMAIN));
+                $this->update_restore_progress($current_progress, __('Restoring plugins...', 'auto-backup-restore'));
                 if ($this->restore_directory($temp_dir . 'plugins', WP_PLUGIN_DIR)) {
-                    $restored_items[] = __('Plugins', ABR_TEXT_DOMAIN);
+                    $restored_items[] = __('Plugins', 'auto-backup-restore');
                 }
                 $current_progress += $step_size;
             }
 
             // Restore themes
             if (is_dir($temp_dir . 'themes')) {
-                $this->update_restore_progress($current_progress, __('Restoring themes...', ABR_TEXT_DOMAIN));
+                $this->update_restore_progress($current_progress, __('Restoring themes...', 'auto-backup-restore'));
                 if ($this->restore_directory($temp_dir . 'themes', get_theme_root())) {
-                    $restored_items[] = __('Themes', ABR_TEXT_DOMAIN);
+                    $restored_items[] = __('Themes', 'auto-backup-restore');
                 }
                 $current_progress += $step_size;
             }
 
             // Restore uploads
             if (is_dir($temp_dir . 'uploads')) {
-                $this->update_restore_progress($current_progress, __('Restoring uploads...', ABR_TEXT_DOMAIN));
+                $this->update_restore_progress($current_progress, __('Restoring uploads...', 'auto-backup-restore'));
                 $upload_dir = wp_upload_dir();
                 if ($this->restore_directory($temp_dir . 'uploads', $upload_dir['basedir'])) {
-                    $restored_items[] = __('Uploads', ABR_TEXT_DOMAIN);
+                    $restored_items[] = __('Uploads', 'auto-backup-restore');
                 }
                 $current_progress += $step_size;
             }
 
             // Restore database
             if (file_exists($temp_dir . 'database.sql')) {
-                $this->update_restore_progress($current_progress, __('Restoring database...', ABR_TEXT_DOMAIN));
+                $this->update_restore_progress($current_progress, __('Restoring database...', 'auto-backup-restore'));
                 if ($this->restore_database($temp_dir . 'database.sql')) {
-                    $restored_items[] = __('Database', ABR_TEXT_DOMAIN);
+                    $restored_items[] = __('Database', 'auto-backup-restore');
                 }
                 $current_progress += $step_size;
             }
 
-            $this->update_restore_progress(95, __('Cleaning up temporary files...', ABR_TEXT_DOMAIN));
+            $this->update_restore_progress(95, __('Cleaning up temporary files...', 'auto-backup-restore'));
 
             // Cleanup
             $this->cleanup_temp_dir($temp_dir);
 
             if (empty($restored_items)) {
-                $this->update_restore_progress(0, __('No items were restored from the backup.', ABR_TEXT_DOMAIN));
-                return array('success' => false, 'message' => __('No items were restored from the backup.', ABR_TEXT_DOMAIN));
+                $this->update_restore_progress(0, __('No items were restored from the backup.', 'auto-backup-restore'));
+                return array('success' => false, 'message' => __('No items were restored from the backup.', 'auto-backup-restore'));
             }
 
-            $this->update_restore_progress(100, __('Restore completed successfully!', ABR_TEXT_DOMAIN));
+            $this->update_restore_progress(100, __('Restore completed successfully!', 'auto-backup-restore'));
 
             // Send notification email
             $this->send_restore_notification(true, $backup_file, $restored_items);
 
-            $message = sprintf(__('Successfully restored: %s', ABR_TEXT_DOMAIN), implode(', ', $restored_items));
+            $message = sprintf(__('Successfully restored: %s', 'auto-backup-restore'), implode(', ', $restored_items));
             return array('success' => true, 'message' => $message);
 
         } catch (Exception $e) {
-            $this->update_restore_progress(0, __('Restore failed.', ABR_TEXT_DOMAIN));
+            $this->update_restore_progress(0, __('Restore failed.', 'auto-backup-restore'));
             $this->send_restore_notification(false, $backup_file, array(), $e->getMessage());
             error_log('ABR Restore Error: ' . $e->getMessage());
             return array('success' => false, 'message' => $e->getMessage());
@@ -213,7 +213,7 @@ class ABR_Restore {
         $formatted_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($current_time));
 
         if ($success) {
-            $subject = sprintf(__('✅ Restore Completed Successfully - %s', ABR_TEXT_DOMAIN), $site_name);
+            $subject = sprintf(__('✅ Restore Completed Successfully - %s', 'auto-backup-restore'), $site_name);
 
             $message = sprintf(__('Hello,
 
@@ -227,15 +227,15 @@ Restored Components:
 %s
 
 Best regards,
-Auto Backup & Restore Plugin', ABR_TEXT_DOMAIN),
+Auto Backup & Restore Plugin', 'auto-backup-restore'),
                 $site_name,
                 $site_url,
                 $backup_file,
                 $formatted_time,
-                !empty($restored_items) ? '• ' . implode("\n• ", $restored_items) : __('No components restored', ABR_TEXT_DOMAIN)
+                !empty($restored_items) ? '• ' . implode("\n• ", $restored_items) : __('No components restored', 'auto-backup-restore')
             );
         } else {
-            $subject = sprintf(__('❌ Restore Failed - %s', ABR_TEXT_DOMAIN), $site_name);
+            $subject = sprintf(__('❌ Restore Failed - %s', 'auto-backup-restore'), $site_name);
 
             $message = sprintf(__('Hello,
 
@@ -249,12 +249,12 @@ Error: %s
 Please check your site and try restoring manually. If the problem persists, please contact your website administrator.
 
 Best regards,
-Auto Backup & Restore Plugin', ABR_TEXT_DOMAIN),
+Auto Backup & Restore Plugin', 'auto-backup-restore'),
                 $site_name,
                 $site_url,
-                $backup_file ? $backup_file : __('Unknown', ABR_TEXT_DOMAIN),
+                $backup_file ? $backup_file : __('Unknown', 'auto-backup-restore'),
                 $formatted_time,
-                $error_message ? $error_message : __('Unknown error occurred', ABR_TEXT_DOMAIN)
+                $error_message ? $error_message : __('Unknown error occurred', 'auto-backup-restore')
             );
         }
 

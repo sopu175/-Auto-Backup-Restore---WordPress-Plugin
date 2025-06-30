@@ -51,7 +51,7 @@ class ABR_Settings {
         // Validate max backups
         $max_backups = intval($post_data['max_backups']);
         if ($max_backups < 1 || $max_backups > 50) {
-            $errors[] = __('Maximum backups must be between 1 and 50.', ABR_TEXT_DOMAIN);
+            $errors[] = __('Maximum backups must be between 1 and 50.', 'auto-backup-restore');
             $max_backups = 10;
         }
         $settings['max_backups'] = $max_backups;
@@ -61,7 +61,7 @@ class ABR_Settings {
         $backup_types = isset($post_data['backup_types']) ? array_map('sanitize_text_field', $post_data['backup_types']) : array();
         $backup_types = array_intersect($backup_types, $allowed_types);
         if (empty($backup_types)) {
-            $errors[] = __('At least one backup type must be selected.', ABR_TEXT_DOMAIN);
+            $errors[] = __('At least one backup type must be selected.', 'auto-backup-restore');
             $backup_types = array('database');
         }
         $settings['backup_types'] = $backup_types;
@@ -72,7 +72,7 @@ class ABR_Settings {
         // Validate email address
         $notification_email = sanitize_email($post_data['notification_email']);
         if ($settings['email_notifications'] && !is_email($notification_email)) {
-            $errors[] = __('Please enter a valid email address for notifications.', ABR_TEXT_DOMAIN);
+            $errors[] = __('Please enter a valid email address for notifications.', 'auto-backup-restore');
             $notification_email = get_option('admin_email');
         }
         $settings['notification_email'] = $notification_email;

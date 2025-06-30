@@ -16,28 +16,28 @@ class ABR_Backup {
             // Ensure backup directory exists and is writable
             if (!file_exists($this->backup_dir)) {
                 if (!wp_mkdir_p($this->backup_dir)) {
-                    throw new Exception(__('Failed to create backup directory. Please check file permissions.', ABR_TEXT_DOMAIN));
+                    throw new Exception(__('Failed to create backup directory. Please check file permissions.', 'auto-backup-restore'));
                 }
             }
 
             if (!is_writable($this->backup_dir)) {
-                throw new Exception(__('Backup directory is not writable. Please check file permissions.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Backup directory is not writable. Please check file permissions.', 'auto-backup-restore'));
             }
 
             // Check available disk space (at least 100MB required)
             $free_space = disk_free_space($this->backup_dir);
             if ($free_space !== false && $free_space < 100 * 1024 * 1024) {
-                throw new Exception(__('Insufficient disk space. At least 100MB required for backup creation.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Insufficient disk space. At least 100MB required for backup creation.', 'auto-backup-restore'));
             }
 
-            $this->update_progress(5, __('Creating backup file...', ABR_TEXT_DOMAIN));
+            $this->update_progress(5, __('Creating backup file...', 'auto-backup-restore'));
 
             $timestamp = date('Y-m-d_H-i-s');
             $backup_file = $this->backup_dir . 'full-backup-' . $timestamp . '.zip';
 
             $zip = new ZipArchive();
             if ($zip->open($backup_file, ZipArchive::CREATE) !== TRUE) {
-                return array('success' => false, 'message' => __('Could not create backup file.', ABR_TEXT_DOMAIN));
+                return array('success' => false, 'message' => __('Could not create backup file.', 'auto-backup-restore'));
             }
 
             $settings = get_option('abr_settings', array());
@@ -50,7 +50,7 @@ class ABR_Backup {
             if (in_array('plugins', $backup_types)) {
                 $current_step++;
                 $progress = 10 + (($current_step / $total_steps) * 70);
-                $this->update_progress($progress, __('Backing up plugins...', ABR_TEXT_DOMAIN));
+                $this->update_progress($progress, __('Backing up plugins...', 'auto-backup-restore'));
                 $this->add_directory_to_zip($zip, WP_PLUGIN_DIR, 'plugins/');
             }
 
@@ -58,7 +58,7 @@ class ABR_Backup {
             if (in_array('themes', $backup_types)) {
                 $current_step++;
                 $progress = 10 + (($current_step / $total_steps) * 70);
-                $this->update_progress($progress, __('Backing up themes...', ABR_TEXT_DOMAIN));
+                $this->update_progress($progress, __('Backing up themes...', 'auto-backup-restore'));
                 $this->add_directory_to_zip($zip, get_theme_root(), 'themes/');
             }
 
@@ -66,7 +66,7 @@ class ABR_Backup {
             if (in_array('uploads', $backup_types)) {
                 $current_step++;
                 $progress = 10 + (($current_step / $total_steps) * 70);
-                $this->update_progress($progress, __('Backing up uploads...', ABR_TEXT_DOMAIN));
+                $this->update_progress($progress, __('Backing up uploads...', 'auto-backup-restore'));
                 $upload_dir = wp_upload_dir();
                 $this->add_directory_to_zip($zip, $upload_dir['basedir'], 'uploads/');
             }
@@ -75,7 +75,7 @@ class ABR_Backup {
             if (in_array('database', $backup_types)) {
                 $current_step++;
                 $progress = 10 + (($current_step / $total_steps) * 70);
-                $this->update_progress($progress, __('Backing up database...', ABR_TEXT_DOMAIN));
+                $this->update_progress($progress, __('Backing up database...', 'auto-backup-restore'));
                 $db_backup = $this->export_database();
                 if ($db_backup) {
                     $zip->addFromString('database.sql', $db_backup);
@@ -84,33 +84,33 @@ class ABR_Backup {
 
             // Add site info
             $current_step++;
-            $this->update_progress(90, __('Adding site information...', ABR_TEXT_DOMAIN));
+            $this->update_progress(90, __('Adding site information...', 'auto-backup-restore'));
             $site_info = $this->get_site_info();
             $zip->addFromString('site-info.json', json_encode($site_info, JSON_PRETTY_PRINT));
 
-            $this->update_progress(95, __('Finalizing backup...', ABR_TEXT_DOMAIN));
+            $this->update_progress(95, __('Finalizing backup...', 'auto-backup-restore'));
 
             // Close the ZIP file with error checking
             if (!$zip->close()) {
-                throw new Exception(__('Failed to finalize backup file.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Failed to finalize backup file.', 'auto-backup-restore'));
             }
 
             // Verify the backup file was created and is valid
             if (!file_exists($backup_file) || filesize($backup_file) === 0) {
-                throw new Exception(__('Backup file was not created properly.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Backup file was not created properly.', 'auto-backup-restore'));
             }
 
-            $this->update_progress(98, __('Verifying backup...', ABR_TEXT_DOMAIN));
+            $this->update_progress(98, __('Verifying backup...', 'auto-backup-restore'));
 
             // Quick verification that the ZIP file is valid
             $test_zip = new ZipArchive();
             if ($test_zip->open($backup_file, ZipArchive::CHECKCONS) !== TRUE) {
                 @unlink($backup_file); // Remove invalid file
-                throw new Exception(__('Created backup file is corrupted.', ABR_TEXT_DOMAIN));
+                throw new Exception(__('Created backup file is corrupted.', 'auto-backup-restore'));
             }
             $test_zip->close();
 
-            $this->update_progress(100, __('Backup completed successfully!', ABR_TEXT_DOMAIN));
+            $this->update_progress(100, __('Backup completed successfully!', 'auto-backup-restore'));
 
             // Send email notification if enabled (in background to avoid blocking)
             $this->send_backup_notification(true, basename($backup_file));
@@ -120,7 +120,7 @@ class ABR_Backup {
 
             return array(
                 'success' => true,
-                'message' => __('Backup created successfully!', ABR_TEXT_DOMAIN),
+                'message' => __('Backup created successfully!', 'auto-backup-restore'),
                 'file' => basename($backup_file),
                 'size' => size_format(filesize($backup_file))
             );
@@ -163,7 +163,7 @@ class ABR_Backup {
         $formatted_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($current_time));
 
         if ($success) {
-            $subject = sprintf(__('✅ Backup Completed Successfully - %s', ABR_TEXT_DOMAIN), $site_name);
+            $subject = sprintf(__('✅ Backup Completed Successfully - %s', 'auto-backup-restore'), $site_name);
 
             $message = sprintf(__('Hello,
 
@@ -177,7 +177,7 @@ The backup includes:
 %s
 
 Best regards,
-Auto Backup & Restore Plugin', ABR_TEXT_DOMAIN),
+Auto Backup & Restore Plugin', 'auto-backup-restore'),
                 $site_name,
                 $site_url,
                 $backup_file,
@@ -185,7 +185,7 @@ Auto Backup & Restore Plugin', ABR_TEXT_DOMAIN),
                 $this->get_backup_types_text($settings)
             );
         } else {
-            $subject = sprintf(__('❌ Backup Failed - %s', ABR_TEXT_DOMAIN), $site_name);
+            $subject = sprintf(__('❌ Backup Failed - %s', 'auto-backup-restore'), $site_name);
 
             $message = sprintf(__('Hello,
 
@@ -198,11 +198,11 @@ Error: %s
 Please check your site and try creating a backup manually. If the problem persists, please contact your website administrator.
 
 Best regards,
-Auto Backup & Restore Plugin', ABR_TEXT_DOMAIN),
+Auto Backup & Restore Plugin', 'auto-backup-restore'),
                 $site_name,
                 $site_url,
                 $formatted_time,
-                $error_message ? $error_message : __('Unknown error occurred', ABR_TEXT_DOMAIN)
+                $error_message ? $error_message : __('Unknown error occurred', 'auto-backup-restore')
             );
         }
 
@@ -351,16 +351,16 @@ Auto Backup & Restore Plugin', ABR_TEXT_DOMAIN),
         $types_text = array();
 
         if (in_array('plugins', $backup_types)) {
-            $types_text[] = '• ' . __('Plugins', ABR_TEXT_DOMAIN);
+            $types_text[] = '• ' . __('Plugins', 'auto-backup-restore');
         }
         if (in_array('themes', $backup_types)) {
-            $types_text[] = '• ' . __('Themes', ABR_TEXT_DOMAIN);
+            $types_text[] = '• ' . __('Themes', 'auto-backup-restore');
         }
         if (in_array('uploads', $backup_types)) {
-            $types_text[] = '• ' . __('Media/Uploads', ABR_TEXT_DOMAIN);
+            $types_text[] = '• ' . __('Media/Uploads', 'auto-backup-restore');
         }
         if (in_array('database', $backup_types)) {
-            $types_text[] = '• ' . __('Database', ABR_TEXT_DOMAIN);
+            $types_text[] = '• ' . __('Database', 'auto-backup-restore');
         }
 
         return implode("\n", $types_text);
